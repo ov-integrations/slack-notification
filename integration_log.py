@@ -40,7 +40,7 @@ class LogLevel(Enum):
     @staticmethod
     def get_log_level_by_name(ov_log_level_name):
         for log_level in list(LogLevel):
-            if log_level.log_level_name == ov_log_level_name:
+            if log_level.log_level_name.upper() == ov_log_level_name.upper():
                 return log_level
         raise Exception("Cannot find the log level called '{}'".format(ov_log_level_name))
     
