@@ -1,0 +1,44 @@
+{
+  "type" : "object",
+  "properties" : {
+      "ovUrl" : {
+          "type" : "string",
+          "pattern" : "^https://.*"
+      },
+      "ovAccessKey" : {
+          "type" : "string",
+          "minLength" : 20,
+          "maxLength" : 20
+      },
+      "ovSecretKey" : {
+          "type" : "string",
+          "minLength" : 70,
+          "maxLength" : 70
+      },
+      "serviceId" : {
+        "type" : "integer",
+        "multipleOf" : 1,
+        "minimum": 0
+      },
+      "channelNameField" : {
+          "type" : "string",
+          "minLength" : 1
+      },
+      "botTokenInSlack" : {
+          "type" : "string",
+          "pattern": "^xoxb-.*"
+      },
+      "maxAttempts" : {
+        "type" : "integer",
+        "multipleOf" : 1,
+        "minimum" : 0,
+        "maximum" : 10
+      },
+      "nextAttemptDelay" : {
+        "type" : "integer",
+        "multipleOf" : 1,
+        "minimum" : 0,
+        "maximum" : 60
+      }
+  }
+}

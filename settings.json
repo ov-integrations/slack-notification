@@ -1,0 +1,10 @@
+{
+    "ovUrl" : "",
+    "ovAccessKey": "",
+    "ovSecretKey": "",
+    "serviceId" : ,
+    "channelField" : "",
+    "slackBotToken" : "",
+    "maxAttempts" : ,
+    "nextAttemptDelay" : 
+}
