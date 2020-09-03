@@ -1,4 +1,8 @@
+import time
+import datetime
+
 from slack import WebClient
+from slack.errors import SlackApiError
 
 from curl import Curl
 from integration_log import LogLevel, HTTPBearerAuth
@@ -6,6 +10,7 @@ from notifservice import NotificationService
 
 
 class SlackNotifService(NotificationService):
+    DELAY_MESSAGE_SEND = 1
 
     def __init__(self, service_id, process_id, ov_url, ov_access_key, ov_secret_key, log_level, 
                 channel_field_name, bot_token_in_slack, max_attempts, next_attempt_delay):
@@ -15,31 +20,43 @@ class SlackNotifService(NotificationService):
         self._user_trackor = UserTrackor(ov_url, ov_access_key, ov_secret_key)
         self._url = ov_url
         self._client = WebClient(token=bot_token_in_slack)
+        self._time_send_to_channel = {}
 
     def send_notification(self, notif_queue_record):
         if not (hasattr(notif_queue_record, 'channel')) or notif_queue_record.channel is None:
             raise Exception("Notif Queue Record with ID [{}] has no channel".format(notif_queue_record.notif_queue_id))
 
-        msg = self.message_formation(notif_queue_record)
+        msg = self.__format_message(notif_queue_record)
 
         self._integration_log.add(LogLevel.INFO,
                                       "Sending message to [{}] Slack channel".format(notif_queue_record.channel),
                                       "Message Text: [{}]".format(msg))
 
+        if (notif_queue_record.channel in self._time_send_to_channel and
+                (datetime.datetime.now() - self._time_send_to_channel[notif_queue_record.channel]).total_seconds() < 1):
+            time.sleep(SlackNotifService.DELAY_MESSAGE_SEND)
+        
+        self._time_send_to_channel[notif_queue_record.channel] = datetime.datetime.now()
+
         #Send your message to Slack.
         try:
             response = self._client.chat_postMessage(channel=notif_queue_record.channel, text=msg)
-        except Exception as e:
-            raise Exception('Error when sending message to Slack.Error: [{}]'.format(str(e)))
+        except SlackApiError as e:
+            if e.response["error"] == "ratelimited":
+                delay = int(e.response.headers['Retry-After'])
+                raise Exception("Error when sending message to Slack. Rate limited. Sending the following messages is possible in {} seconds.".format(delay), delay)
+            else:
+                raise Exception("Error when sending message to Slack. Error: [{}]".format(str(e)))
+
     
-    def message_formation(self, notif_queue_record):
+    def __format_message(self, notif_queue_record):
         attachments = ""
         for blob_id in notif_queue_record.blob_data_ids:
-            attachments = attachments + self._url + "/efiles/EFileGetBlobFromDb.do?id=" + str(blob_id) + " "
+            attachments = attachments + "\n" + self._url + "/efiles/EFileGetBlobFromDb.do?id=" + str(blob_id)
 
         msg = notif_queue_record.subj + "\n" + notif_queue_record.msg + "\n" + self._url.replace("https://", "")
         if len(attachments) > 0:
-            msg = msg + " " + "Attachments: " + attachments
+            msg = msg + "\nAttachments:" + attachments
         
         return msg
 

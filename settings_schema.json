@@ -20,11 +20,11 @@
         "multipleOf" : 1,
         "minimum": 0
       },
-      "channelNameField" : {
+      "channelField" : {
           "type" : "string",
           "minLength" : 1
       },
-      "botTokenInSlack" : {
+      "slackBotToken" : {
           "type" : "string",
           "pattern": "^xoxb-.*"
       },
@@ -40,5 +40,13 @@
         "minimum" : 0,
         "maximum" : 60
       }
-  }
+  },
+  "required": [
+      "ovUrl",
+      "ovAccessKey",
+      "ovSecretKey",
+      "serviceId",
+      "channelField",
+      "slackBotToken"
+  ]
 }

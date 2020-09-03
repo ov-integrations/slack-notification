@@ -57,6 +57,8 @@ class NotificationService(ABC):
                                                   "Can't send Notif Queue Record with id = [{}]".format(
                                                       notif_queue_rec.notif_queue_id),
                                                   str(e))
+                    if len(e.args) > 1:
+                        time.sleep(int(e.args[1]))
 
                     if attempts + 1 == self._max_attempts:
                         notif_queue_rec.status = NotifQueueStatus.FAIL.name
