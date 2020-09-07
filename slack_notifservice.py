@@ -36,8 +36,20 @@ class SlackNotifService(NotificationService):
                 (datetime.datetime.now() - self._time_send_to_channel[notif_queue_record.channel]).total_seconds() < 1):
             time.sleep(SlackNotifService.DELAY_MESSAGE_SEND)
         
+        try:
+            response = self._client.chat_postMessage(channel=notif_queue_record.channel, text=msg)
+        except SlackApiError as e:
+            if e.response["error"] == "ratelimited":
+                delay = int(e.response.headers['Retry-After'])
+                self._integration_log.add(LogLevel.WARNING,
+                                    "Warning when sending message to Slack. Rate limited. Execution will continue in {} seconds.".format(delay),
+                                    "Channel: [{0}]\nMessage Text: [{1}]".format(notif_queue_record.channel, msg))
+                time.sleep(delay)
+                response = self._client.chat_postMessage(channel=notif_queue_record.channel, text=msg)
+            else:
+                raise e
+
         self._time_send_to_channel[notif_queue_record.channel] = datetime.datetime.now()
-        self.__send_message(notif_queue_record.channel, msg, True)
 
 
     def __format_message(self, notif_queue_record):
@@ -50,26 +62,6 @@ class SlackNotifService(NotificationService):
             msg = msg + "\nAttachments:" + attachments
         
         return msg
-
-
-    def __send_message(self, channel, msg, resend):
-        try:
-            response = self._client.chat_postMessage(channel=channel, text=msg)
-        except SlackApiError as e:
-            if e.response["error"] == "ratelimited":
-                delay = int(e.response.headers['Retry-After'])
-
-                self._integration_log.add(LogLevel.WARNING,
-                                    "Warning when sending message to Slack. Rate limited. Execution will continue in {} seconds.".format(delay),
-                                    "Channel: [{0}]\nMessage Text: [{1}]".format(channel, msg))
-                time.sleep(delay)
-
-                if resend:
-                    self.__send_message(channel, msg, False)
-                else:
-                    raise Exception("Error when sending message to Slack. Rate limited. Error: [{}]".format(str(e)))
-            else:
-                raise Exception("Error when sending message to Slack. Error: [{}]".format(str(e)))
 
 
     def _prepare_notif_queue(self, notif_queue):
