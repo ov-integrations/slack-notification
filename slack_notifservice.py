@@ -1,16 +1,10 @@
-import time
-import datetime
-
-from slack import WebClient
-from slack.errors import SlackApiError
-
 from curl import Curl
 from integration_log import LogLevel, HTTPBearerAuth
 from notifservice import NotificationService
+from slack_messenger import Slack
 
 
 class SlackNotifService(NotificationService):
-    DELAY_MESSAGE_SEND = 1
 
     def __init__(self, service_id, process_id, ov_url, ov_access_key, ov_secret_key, log_level, 
                 channel_field_name, bot_token_in_slack, max_attempts, next_attempt_delay):
@@ -19,49 +13,20 @@ class SlackNotifService(NotificationService):
         self._channel_field_name = channel_field_name
         self._user_trackor = UserTrackor(ov_url, ov_access_key, ov_secret_key)
         self._url = ov_url
-        self._client = WebClient(token=bot_token_in_slack)
-        self._time_send_to_channel = {}
+        self._slack = Slack(bot_token_in_slack)
 
     def send_notification(self, notif_queue_record):
         if not (hasattr(notif_queue_record, 'channel')) or notif_queue_record.channel is None:
             raise Exception("Notif Queue Record with ID [{}] has no channel".format(notif_queue_record.notif_queue_id))
 
-        msg = self.__format_message(notif_queue_record)
-
-        self._integration_log.add(LogLevel.INFO,
-                                      "Sending message to [{}] Slack channel".format(notif_queue_record.channel),
-                                      "Message Text: [{}]".format(msg))
-
-        if (notif_queue_record.channel in self._time_send_to_channel and
-                (datetime.datetime.now() - self._time_send_to_channel[notif_queue_record.channel]).total_seconds() < 1):
-            time.sleep(SlackNotifService.DELAY_MESSAGE_SEND)
-        
-        try:
-            response = self._client.chat_postMessage(channel=notif_queue_record.channel, text=msg)
-        except SlackApiError as e:
-            if e.response["error"] == "ratelimited":
-                delay = int(e.response.headers['Retry-After'])
-                self._integration_log.add(LogLevel.WARNING,
-                                    "Warning when sending message to Slack. Rate limited. Execution will continue in {} seconds.".format(delay),
-                                    "Channel: [{0}]\nMessage Text: [{1}]".format(notif_queue_record.channel, msg))
-                time.sleep(delay)
-                response = self._client.chat_postMessage(channel=notif_queue_record.channel, text=msg)
-            else:
-                raise e
-
-        self._time_send_to_channel[notif_queue_record.channel] = datetime.datetime.now()
-
-
-    def __format_message(self, notif_queue_record):
-        attachments = ""
-        for blob_id in notif_queue_record.blob_data_ids:
-            attachments = attachments + "\n" + self._url + "/efiles/EFileGetBlobFromDb.do?id=" + str(blob_id)
-
-        msg = notif_queue_record.subj + "\n" + notif_queue_record.msg + "\n" + self._url.replace("https://", "")
-        if len(attachments) > 0:
-            msg = msg + "\nAttachments:" + attachments
-        
-        return msg
+        slack_messsage = {
+            'channel': notif_queue_record.channel,
+            'subj': notif_queue_record.subj,
+            'msg': notif_queue_record.msg,
+            'blob_data_ids': notif_queue_record.blob_data_ids,
+            'ov_url': self._url
+        }
+        self._slack.send_message(slack_messsage, self._integration_log)
 
 
     def _prepare_notif_queue(self, notif_queue):
