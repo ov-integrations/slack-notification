@@ -1,6 +1,6 @@
 # Slack-notification
 
-Sends a notification to the Slack channel specified in the User trackor.
+Sends a notification to the [Slack](https://slack.com/intl/en-ru/help/articles/115004071768-What-is-Slack-) channel specified in the User trackor.
 
 ## Requirements
 - Python 3.6 and above
@@ -14,7 +14,6 @@ Sends a notification to the Slack channel specified in the User trackor.
 - Required Bot Token Scopes:
   * chat:write
   * chat:write.public
-  * files:write
 
 - Further, for the integration to work (sending messages to Slack), Bot User OAuth Access Token will be required.
 

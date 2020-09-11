@@ -1,7 +1,7 @@
 from curl import Curl
 from integration_log import LogLevel, HTTPBearerAuth
 from notifservice import NotificationService
-from slack_messenger import Slack
+from slack_messenger import Slack, SlackMessage
 
 
 class SlackNotifService(NotificationService):
@@ -19,14 +19,8 @@ class SlackNotifService(NotificationService):
         if not (hasattr(notif_queue_record, 'channel')) or notif_queue_record.channel is None:
             raise Exception("Notif Queue Record with ID [{}] has no channel".format(notif_queue_record.notif_queue_id))
 
-        slack_messsage = {
-            'channel': notif_queue_record.channel,
-            'subj': notif_queue_record.subj,
-            'msg': notif_queue_record.msg,
-            'blob_data_ids': notif_queue_record.blob_data_ids,
-            'ov_url': self._url
-        }
-        self._slack.send_message(slack_messsage, self._integration_log)
+        slack_message = SlackMessage(notif_queue_record, self._url)
+        self._slack.send_message(slack_message, self._integration_log)
 
 
     def _prepare_notif_queue(self, notif_queue):
