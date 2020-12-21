@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><COMPONENTS author="slack-notification_admin" description="" name="components.xml" site="https&#x3a;&#x2f;&#x2f;integrations.onevizion.com" ts="" ><RULES>
+ <RULES_ITEM>
+  <IS_ASYNC>0</IS_ASYNC>
+  <IS_ENABLED>1</IS_ENABLED>
+  <RULE>Send Notification for Slack Integration</RULE>
+  <RULE_CLASS_ID>1</RULE_CLASS_ID>
+  <RULE_ID>100006403</RULE_ID>
+  <RULE_TYPE>
+   <RULE_TYPE_ID>101203</RULE_TYPE_ID>
+   <RULE_TYPE>Every day</RULE_TYPE>
+   <REPEAT_INTERVAL>FREQ=DAILY;BYHOUR=10;</REPEAT_INTERVAL>
+   <START_DATE>12/03/2020 02:08:00</START_DATE>
+   <TYPE_LABELS>
+    <T_LABEL>
+     <APP_LANG_ID>0</APP_LANG_ID>
+     <APP_LABEL_ID>-11594</APP_LABEL_ID>
+     <LABEL_TEXT>Every day</LABEL_TEXT>
+    </T_LABEL>
+    <T_LABEL>
+     <APP_LANG_ID>1</APP_LANG_ID>
+     <APP_LABEL_ID>-11594</APP_LABEL_ID>
+     <LABEL_TEXT>Every day</LABEL_TEXT>
+    </T_LABEL>
+    <T_LABEL>
+     <APP_LANG_ID>2</APP_LANG_ID>
+     <APP_LABEL_ID>-11594</APP_LABEL_ID>
+     <LABEL_TEXT>Every day</LABEL_TEXT>
+    </T_LABEL>
+    <T_LABEL>
+     <APP_LANG_ID>5</APP_LANG_ID>
+     <APP_LABEL_ID>-11594</APP_LABEL_ID>
+     <LABEL_TEXT>Every day</LABEL_TEXT>
+    </T_LABEL>
+   </TYPE_LABELS>
+   <DESC_LABELS/>
+  </RULE_TYPE>
+  <SQL_TEXT>declare
+    v_user_id number;
+    v_notif_service_id number;
+    v_program_id number := 1002437;
+    v_service_name varchar2(150) := &apos;Slack&apos;;
+    v_channel_field_name varchar2(150) := &apos;US_SLACK_CHANNEL&apos;;
+    v_subject varchar2(500) := &apos;Test integration&apos;;
+    v_message varchar2(500) := &apos;New Slack Message&apos;;
+begin    
+    pkg_sec.set_pid(v_program_id);
+    
+    select min(u.user_id)
+    into v_user_id
+    from config_field cf 
+        join config_value_char cvc on (cf.config_field_id = cvc.config_field_id)
+        join users u on (cvc.key_value = u.xitor_id)
+    where cvc.value_char is not NULL
+	    and cf.config_field_name = v_channel_field_name
+        and cvc.program_id = v_program_id;
+    
+    if v_user_id is NULL then
+        util.raiseerror(&apos;User for whom the &apos;&apos;&apos; || v_channel_field_name || &apos;&apos;&apos; field is filled was not found&apos;);
+    end if;
+        
+    begin
+        select ns.notif_service_id
+        into v_notif_service_id
+        from service s
+            join notif_service ns on (s.service_id = ns.service_id)
+        where s.name = v_service_name;
+    exception
+        when no_data_found then
+            util.raiseerror(&apos;Notification service named &apos;&apos;&apos; || v_service_name || &apos;&apos;&apos; not found&apos;);
+    end;
+    
+    util.sendNotification(
+        p_subject          =&gt; v_subject,
+        p_message          =&gt; v_message,
+        p_user_id          =&gt; v_user_id,
+        p_notif_service_id =&gt; v_notif_service_id);    
+end;</SQL_TEXT>
+  <WARNING_LABEL/>
+  <RULE_CLASS_PARAM_VALS/>
+  <RULE_HTTPCALLS/>
+  <RULE_HTTPCALL_PARAMS/>
+  <BPD_ITEMS>
+   <T_BPD_ITEM>
+    <ITEM_ID>10000615931</ITEM_ID>
+    <PKEY>100006403</PKEY>
+    <ITEM_TYPE_ID>9</ITEM_TYPE_ID>
+    <ITEM_STATUS_ID>1</ITEM_STATUS_ID>
+    <BLOB_DATA/>
+    <PROGRAM_ID>1002437</PROGRAM_ID>
+    <NAME>Send Notification for Slack Integration</NAME>
+    <APP_LABEL/>
+   </T_BPD_ITEM>
+  </BPD_ITEMS>
+  <RULE_GEOCODING/>
+  <RULE_MAP_SNIPPETS/>
+  <PROGRAM_ID>1002437</PROGRAM_ID>
+  <RULE_TYPE_ID>101203</RULE_TYPE_ID>
+  <RULE_TOWER_GROUPS/>
+  <COMPONENT_PACKAGES/>
+  <CONFIG_FIELD_IDNUMS/>
+  <TASK_DATE_IDNUMS/>
+  <TASK_IDNUMS/>
+  <TRACKOR_TYPE_IDNUMS/>
+  <RELATION_TYPE_IDNUMS/>
+  <WP_TEMPLATE_IDNUMS/>
+  <WF_TEMPLATE_IDNUMS/>
+  <IMPORT_IDNUMS/>
+  <REPORT_IDNUMS/>
+ </RULES_ITEM>
+</RULES>
+</COMPONENTS>
