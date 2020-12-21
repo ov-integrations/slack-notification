@@ -3,8 +3,8 @@ The configured integration will view this Notification and send a message to Sla
 
 
 # Requirements
-*The components required for the integration to work are installed. [More details.]()
-*Integration configured. [More details.](https://github.com/ov-integrations/slack-notification)
+* The components required for the integration to work are installed. [More details.](https://github.com/ov-integrations/slack-notification/tree/IHub-171030/setup#installation)
+* Integration configured. [More details.](https://github.com/ov-integrations/slack-notification#slack-notification)
 
 # Installation 
 
